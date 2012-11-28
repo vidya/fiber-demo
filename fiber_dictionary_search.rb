@@ -7,41 +7,45 @@ require './lib_dictionary_search'
 class FiberDictionarySearch
   include LibDictionarySearch
 
-  attr_accessor :dict, :letter_segment, :alphabet_list, :reversible_suffix_words
+  attr_accessor :dict, :fiber_list, :letter_segment, :alphabet_list, :reversible_suffix_words
 
   def initialize(filename)
     @dict = File.readlines(filename).map { |ln| ln.chomp }
     @alphabet_list    = ('a'..'z').to_a
+
+    @fiber_list = {
+        :read_seg           => create_read_segments_fiber(filename),
+        :delete_tiny_words  => create_delete_tiny_words_fiber
+    }
   end
 
   def run
-    read_seg_fiber = create_read_segments_fiber dict, alphabet_list
-    delete_tiny_words_fiber = create_delete_tiny_words_fiber
+    read_seg_fiber            = fiber_list[:read_seg]
+    delete_tiny_words_fiber   = fiber_list[:delete_tiny_words]
 
     first_seg   = read_seg_fiber.resume
-    #binding.pry
-    first_seg = delete_tiny_words_fiber.resume first_seg
-    #binding.pry
+    first_seg   = delete_tiny_words_fiber.resume first_seg
     puts 'after first_seg'
 
     second_seg  = read_seg_fiber.resume
-    #binding.pry
-    second_seg = delete_tiny_words_fiber.resume second_seg
-    #binding.pry
+    second_seg  = delete_tiny_words_fiber.resume second_seg
     puts 'after second_seg'
-    third_seg   = read_seg_fiber.resume
 
+    third_seg   = read_seg_fiber.resume
+    third_seg   = delete_tiny_words_fiber.resume third_seg
+    puts 'after second_seg'
 
     [first_seg, second_seg, third_seg]
   end
 
   #--- fiber: read_segments
-  def create_read_segments_fiber(dict, let_list)
+  def create_read_segments_fiber(filename)
+    dict = File.readlines(filename).map { |ln| ln.chomp }
+    let_list    = ('a'..'z').to_a
+
     Fiber.new do
-      puts "fiber: create_read_segments_fiber --- start"
       let_list.each do |let|
-        puts "fiber: create_read_segments_fiber --- in let_list loop"
-        puts "let: #{let}"
+        puts "fiber: create_read_segments_fiber --- let: #{let} --- in let_list loop"
         let_seg = dict.select { |word| word.start_with? let }
 
         Fiber.yield let_seg
@@ -52,16 +56,12 @@ class FiberDictionarySearch
   #--- fiber: delete_tiny_words
   def create_delete_tiny_words_fiber
     Fiber.new do |word_list|
-      puts "fiber: create_delete_tiny_words_fiber --- start"
-      while not word_list.empty?
-        puts "fiber: create_delete_tiny_words_fiber --- in while not loop"
-        #binding.pry
+      while true
+        puts "fiber: create_delete_tiny_words_fiber --- first_word = #{word_list.first} --- in while not loop"
         result_word_list = word_list.reject { |w| w.size < 3 }
 
-        word_list = Fiber.yield result_word_list
-        puts "fiber: create_delete_tiny_words_fiber --- after yield: in while not loop"
-        #binding.pry
-        word_list
+        next_word_list = Fiber.yield result_word_list
+        word_list = next_word_list
       end
     end
   end
