@@ -17,20 +17,22 @@ class TestDictionarySearch < MiniTest::Unit::TestCase
   end
 
   def test_that_first_segment_is_available
+    puts "test: test_that_first_segment_is_available"
     first_seg = @dict_search.run.first
     assert first_seg.size > 6000
   end
 
   def test_that_second_segment_is_available
+    puts "test: test_that_second_segment_is_available"
     seg_list = @dict_search.run
     second_seg = seg_list[1]
     assert second_seg.size > 6000
   end
 
-  def test_that_second_segment_is_available
+  def test_that_third_segment_is_available
+    puts "test: test_that_third_segment_is_available"
     seg_list = @dict_search.run
     third_seg = seg_list[2]
-    #binding.pry
     assert third_seg.size > 8000
   end
 

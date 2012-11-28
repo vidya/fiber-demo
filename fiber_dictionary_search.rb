@@ -17,17 +17,20 @@ class FiberDictionarySearch
   def run
     read_seg_fiber = create_read_segments_fiber dict, alphabet_list
 
-    first_seg   = read_seg_fiber.resume dict, alphabet_list
-    second_seg  = read_seg_fiber.resume dict, alphabet_list
-    third_seg   = read_seg_fiber.resume dict, alphabet_list
+    first_seg   = read_seg_fiber.resume
+    puts 'after first_seg'
+    second_seg  = read_seg_fiber.resume
+    puts 'after second_seg'
+    third_seg   = read_seg_fiber.resume
 
     [first_seg, second_seg, third_seg]
   end
 
   #--- fiber: read_segments
   def create_read_segments_fiber(dict, let_list)
-    Fiber.new do |dict, let_list|
+    Fiber.new do
       let_list.each do |let|
+        puts "let: #{let}"
         let_seg = dict.select { |word| word.start_with? let }
 
         Fiber.yield let_seg
@@ -43,14 +46,6 @@ class FiberDictionarySearch
       Fiber.yield result_word_list
     end
   end
-
-    #@alphabet_list    = ('a'..'z').to_a
-    #alphabet_list.inject({}) do |let_seg_hash, let|
-    #  let_seg_hash[let] = dict.select { |word| word.start_with? let }
-    #
-    #  let_seg_hash
-    #end
-    #end
 end
 
 
