@@ -16,12 +16,17 @@ class FiberDictionarySearch
 
   def run
     read_seg_fiber = create_read_segments_fiber dict, alphabet_list
+    delete_tiny_words_fiber = create_delete_tiny_words_fiber
 
     first_seg   = read_seg_fiber.resume
+    binding.pry
+    first_seg = delete_tiny_words_fiber.resume first_seg
+    binding.pry
     puts 'after first_seg'
     second_seg  = read_seg_fiber.resume
     puts 'after second_seg'
     third_seg   = read_seg_fiber.resume
+
 
     [first_seg, second_seg, third_seg]
   end
@@ -39,7 +44,7 @@ class FiberDictionarySearch
   end
 
   #--- fiber: delete_tiny_words
-  def create_delete_tiny_words_fiber(word_list)
+  def create_delete_tiny_words_fiber
     Fiber.new do |word_list|
       result_word_list = word_list.reject { |w| w.size < 3 }
 
