@@ -19,11 +19,15 @@ class FiberDictionarySearch
     delete_tiny_words_fiber = create_delete_tiny_words_fiber
 
     first_seg   = read_seg_fiber.resume
-    binding.pry
+    #binding.pry
     first_seg = delete_tiny_words_fiber.resume first_seg
-    binding.pry
+    #binding.pry
     puts 'after first_seg'
+
     second_seg  = read_seg_fiber.resume
+    #binding.pry
+    second_seg = delete_tiny_words_fiber.resume second_seg
+    #binding.pry
     puts 'after second_seg'
     third_seg   = read_seg_fiber.resume
 
@@ -34,7 +38,9 @@ class FiberDictionarySearch
   #--- fiber: read_segments
   def create_read_segments_fiber(dict, let_list)
     Fiber.new do
+      puts "fiber: create_read_segments_fiber --- start"
       let_list.each do |let|
+        puts "fiber: create_read_segments_fiber --- in let_list loop"
         puts "let: #{let}"
         let_seg = dict.select { |word| word.start_with? let }
 
@@ -46,9 +52,17 @@ class FiberDictionarySearch
   #--- fiber: delete_tiny_words
   def create_delete_tiny_words_fiber
     Fiber.new do |word_list|
-      result_word_list = word_list.reject { |w| w.size < 3 }
+      puts "fiber: create_delete_tiny_words_fiber --- start"
+      while not word_list.empty?
+        puts "fiber: create_delete_tiny_words_fiber --- in while not loop"
+        #binding.pry
+        result_word_list = word_list.reject { |w| w.size < 3 }
 
-      Fiber.yield result_word_list
+        word_list = Fiber.yield result_word_list
+        puts "fiber: create_delete_tiny_words_fiber --- after yield: in while not loop"
+        #binding.pry
+        word_list
+      end
     end
   end
 end

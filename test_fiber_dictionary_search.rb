@@ -36,6 +36,14 @@ class TestDictionarySearch < MiniTest::Unit::TestCase
     assert third_seg.size > 8000
   end
 
+  def test_that_segment_a_has_no_tiny_words
+    seg_list = @dict_search.run
+    seg_a = seg_list[0]
+    dirty_seg_a = seg_a.select { |w| w.size < 3 }
+    #binding.pry
+    dirty_seg_a.must_be_empty
+  end
+  #---------------------------------------------
   #def test_that_dictionary_is_split_into_segments
   #  letter_segment_keys = dict_search.letter_segment.keys
   #
