@@ -14,14 +14,14 @@ class FiberDictionarySearch
     @alphabet_list    = ('a'..'z').to_a
 
     @fiber_list = {
-        :read_seg           => create_read_segments_fiber(filename),
-        :delete_short_words  => create_delete_short_words_fiber
+        :read_seg             => create_read_segments_fiber(filename),
+        :delete_short_words   => create_delete_short_words_fiber
     }
   end
 
   def run
-    read_seg_fiber            = fiber_list[:read_seg]
-    delete_short_words_fiber   = fiber_list[:delete_short_words]
+    read_seg_fiber              = fiber_list[:read_seg]
+    delete_short_words_fiber    = fiber_list[:delete_short_words]
 
     first_seg   = read_seg_fiber.resume
     first_seg   = delete_short_words_fiber.resume first_seg
@@ -40,12 +40,13 @@ class FiberDictionarySearch
 
   #--- fiber: read_segments
   def create_read_segments_fiber(filename)
-    dict = File.readlines(filename).map { |ln| ln.chomp }
+    dict        = File.readlines(filename).map { |ln| ln.chomp }
     let_list    = ('a'..'z').to_a
 
     Fiber.new do
       let_list.each do |let|
         puts "fiber: create_read_segments_fiber --- let: #{let} --- in let_list loop"
+
         let_seg = dict.select { |word| word.start_with? let }
 
         Fiber.yield let_seg
@@ -58,10 +59,11 @@ class FiberDictionarySearch
     Fiber.new do |word_list|
       while true
         puts "fiber: create_delete_short_words_fiber --- first_word = #{word_list.first} --- in while not loop"
-        long_word_list = word_list.reject { |w| w.size < 3 }
 
-        next_word_list = Fiber.yield long_word_list
-        word_list = next_word_list
+        long_word_list  = word_list.reject { |w| w.size < 3 }
+
+        next_word_list  = Fiber.yield long_word_list
+        word_list       = next_word_list
       end
     end
   end
