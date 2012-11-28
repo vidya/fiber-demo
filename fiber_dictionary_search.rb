@@ -15,24 +15,24 @@ class FiberDictionarySearch
 
     @fiber_list = {
         :read_seg           => create_read_segments_fiber(filename),
-        :delete_tiny_words  => create_delete_tiny_words_fiber
+        :delete_short_words  => create_delete_short_words_fiber
     }
   end
 
   def run
     read_seg_fiber            = fiber_list[:read_seg]
-    delete_tiny_words_fiber   = fiber_list[:delete_tiny_words]
+    delete_short_words_fiber   = fiber_list[:delete_short_words]
 
     first_seg   = read_seg_fiber.resume
-    first_seg   = delete_tiny_words_fiber.resume first_seg
+    first_seg   = delete_short_words_fiber.resume first_seg
     puts 'after first_seg'
 
     second_seg  = read_seg_fiber.resume
-    second_seg  = delete_tiny_words_fiber.resume second_seg
+    second_seg  = delete_short_words_fiber.resume second_seg
     puts 'after second_seg'
 
     third_seg   = read_seg_fiber.resume
-    third_seg   = delete_tiny_words_fiber.resume third_seg
+    third_seg   = delete_short_words_fiber.resume third_seg
     puts 'after second_seg'
 
     [first_seg, second_seg, third_seg]
@@ -53,14 +53,14 @@ class FiberDictionarySearch
     end
   end
 
-  #--- fiber: delete_tiny_words
-  def create_delete_tiny_words_fiber
+  #--- fiber: delete_short_words
+  def create_delete_short_words_fiber
     Fiber.new do |word_list|
       while true
-        puts "fiber: create_delete_tiny_words_fiber --- first_word = #{word_list.first} --- in while not loop"
-        result_word_list = word_list.reject { |w| w.size < 3 }
+        puts "fiber: create_delete_short_words_fiber --- first_word = #{word_list.first} --- in while not loop"
+        long_word_list = word_list.reject { |w| w.size < 3 }
 
-        next_word_list = Fiber.yield result_word_list
+        next_word_list = Fiber.yield long_word_list
         word_list = next_word_list
       end
     end
@@ -133,7 +133,7 @@ class OldFiberDictionarySearch
         let = list.pop
         puts "let = #{let}"
 
-        Fiber.yield list[0..-1], select_reversible_suffix_words(delete_tiny_words @letter_segment[let])
+        Fiber.yield list[0..-1], select_reversible_suffix_words(delete_short_words @letter_segment[let])
       end
     end
   end
