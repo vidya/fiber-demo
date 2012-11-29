@@ -15,16 +15,21 @@ class FiberDictionarySearch
 
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
-        :delete_short_words   => create_delete_short_words_fiber
+        :delete_short_words   => create_delete_short_words_fiber,
+        :tail_swap_pairs      => create_tail_swap_pairs_fiber
     }
   end
 
   def run
     read_seg_fiber              = fiber_list[:read_seg]
     delete_short_words_fiber    = fiber_list[:delete_short_words]
+    tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
 
     first_seg   = read_seg_fiber.resume
     first_seg   = delete_short_words_fiber.resume first_seg
+    binding.pry
+    swap_pairs   = create_tail_swap_pairs_fiber.resume first_seg
+    binding.pry
     puts 'after first_seg'
 
     second_seg  = read_seg_fiber.resume
@@ -63,6 +68,26 @@ class FiberDictionarySearch
         long_word_list  = word_list.reject { |w| w.size < 3 }
 
         next_word_list  = Fiber.yield long_word_list
+        word_list       = next_word_list
+      end
+    end
+  end
+
+  #-- fiber: list_tail_swap_pairs
+  def create_tail_swap_pairs_fiber
+    Fiber.new do |word_list|
+      while true
+        puts "fiber: create_tail_swap_pairs_fiber --- first_word = #{word_list.first} --- in while not loop"
+
+        swap_pairs = word_list.inject([]) do |list, word|
+          rev_word = word[0..-3] + word[-2, 2].reverse
+
+          list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
+
+          list
+        end
+
+        next_word_list  = Fiber.yield swap_pairs
         word_list       = next_word_list
       end
     end
