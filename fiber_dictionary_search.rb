@@ -3,9 +3,11 @@ require 'pry'
 require 'fiber'
 
 class FiberDictionarySearch
-  attr_accessor :fiber_list
+  attr_accessor :fiber_list, :reversible_suffix_words
 
   def initialize(filename)
+    @reversible_suffix_words  = []
+
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
         :delete_short_words   => create_delete_short_words_fiber,
@@ -13,7 +15,7 @@ class FiberDictionarySearch
     }
   end
 
-  def run
+  def old_run
     read_seg_fiber              = fiber_list[:read_seg]
     delete_short_words_fiber    = fiber_list[:delete_short_words]
     tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
@@ -29,10 +31,34 @@ class FiberDictionarySearch
       swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
     end
 
-    binding.pry
+    #binding.pry
     swap_pairs_list
   end
 
+  def word_pairs
+    if @reversible_suffix_words.empty?
+      #@reversible_suffix_words = self.run
+      read_seg_fiber              = fiber_list[:read_seg]
+      delete_short_words_fiber    = fiber_list[:delete_short_words]
+      tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
+
+      swap_pairs_list = []
+
+      while read_seg_fiber.alive?
+        dict_seg      = read_seg_fiber.resume
+        dict_seg      = delete_short_words_fiber.resume dict_seg
+
+        swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
+
+        swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
+      end
+
+      #binding.pry
+      @reversible_suffix_words = swap_pairs_list
+    end
+
+    @reversible_suffix_words
+  end
 
   #--- fiber: read_segments
   def create_read_segments_fiber(filename)
