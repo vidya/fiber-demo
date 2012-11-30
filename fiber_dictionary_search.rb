@@ -25,23 +25,51 @@ class FiberDictionarySearch
     delete_short_words_fiber    = fiber_list[:delete_short_words]
     tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
 
-    first_seg   = read_seg_fiber.resume
-    first_seg   = delete_short_words_fiber.resume first_seg
+    swap_pairs_list = []
+    while read_seg_fiber.alive?
+      dict_seg      = read_seg_fiber.resume
+      dict_seg      = delete_short_words_fiber.resume dict_seg
+      #binding.pry
+
+      swap_pairs    = create_tail_swap_pairs_fiber.resume dict_seg
+      swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
+
+      #binding.pry
+    end
+
     binding.pry
-    swap_pairs   = create_tail_swap_pairs_fiber.resume first_seg
-    binding.pry
-    puts 'after first_seg'
-
-    second_seg  = read_seg_fiber.resume
-    second_seg  = delete_short_words_fiber.resume second_seg
-    puts 'after second_seg'
-
-    third_seg   = read_seg_fiber.resume
-    third_seg   = delete_short_words_fiber.resume third_seg
-    puts 'after second_seg'
-
-    [first_seg, second_seg, third_seg]
+    swap_pairs_list
+    #[first_seg, second_seg, third_seg]
   end
+
+
+  #def run
+  #  read_seg_fiber              = fiber_list[:read_seg]
+  #  delete_short_words_fiber    = fiber_list[:delete_short_words]
+  #  tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
+  #
+  #  first_seg   = read_seg_fiber.resume
+  #  first_seg   = delete_short_words_fiber.resume first_seg
+  #  #binding.pry
+  #  first_seg_swap_pairs   = create_tail_swap_pairs_fiber.resume first_seg
+  #  #binding.pry
+  #  puts 'after first_seg'
+  #
+  #  second_seg  = read_seg_fiber.resume
+  #  second_seg  = delete_short_words_fiber.resume second_seg
+  #  binding.pry
+  #  second_seg_swap_pairs   = create_tail_swap_pairs_fiber.resume second_seg
+  #  binding.pry
+  #  puts 'after second_seg'
+  #
+  #  third_seg   = read_seg_fiber.resume
+  #  third_seg   = delete_short_words_fiber.resume third_seg
+  #  puts 'after second_seg'
+  #
+  #  [first_seg, second_seg, third_seg]
+  #end
+  #
+  #
 
   #--- fiber: read_segments
   def create_read_segments_fiber(filename)
@@ -63,7 +91,7 @@ class FiberDictionarySearch
   def create_delete_short_words_fiber
     Fiber.new do |word_list|
       while true
-        puts "fiber: create_delete_short_words_fiber --- first_word = #{word_list.first} --- in while not loop"
+        #puts "fiber: create_delete_short_words_fiber --- first_word = #{word_list.first} --- in while not loop"
 
         long_word_list  = word_list.reject { |w| w.size < 3 }
 
@@ -77,7 +105,7 @@ class FiberDictionarySearch
   def create_tail_swap_pairs_fiber
     Fiber.new do |word_list|
       while true
-        puts "fiber: create_tail_swap_pairs_fiber --- first_word = #{word_list.first} --- in while not loop"
+        #puts "fiber: create_tail_swap_pairs_fiber --- first_word = #{word_list.first} --- in while not loop"
 
         swap_pairs = word_list.inject([]) do |list, word|
           rev_word = word[0..-3] + word[-2, 2].reverse
