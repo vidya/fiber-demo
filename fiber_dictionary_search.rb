@@ -5,7 +5,7 @@ class FiberDictionarySearch
   attr_accessor :word_pairs
 
   def initialize(filename)
-    puts "=== swift pelican ==========="
+    puts "=== smart duck ==========="
 
     @word_pairs = compute_word_pairs(filename)
   end
@@ -15,19 +15,19 @@ class FiberDictionarySearch
   def compute_word_pairs(filename)
     read_seg_fiber             = create_read_segments_fiber(filename)
     delete_short_words_fiber   = create_delete_short_words_fiber
-    tail_swap_pairs_fiber      = create_tail_swap_pairs_fiber
+    word_pairs_fiber           = create_word_pairs_fiber
     
-    tail_swap_pairs = []
+    word_pairs = []
 
     while read_seg_fiber.alive?
       word_list            = read_seg_fiber.resume
       word_list            = delete_short_words_fiber.resume(word_list)
 
-      swap_pairs = tail_swap_pairs_fiber.resume(word_list)
-      swap_pairs.each { |pair| tail_swap_pairs << pair }
+      swap_pairs = word_pairs_fiber.resume(word_list)
+      swap_pairs.each { |pair| word_pairs << pair }
     end
 
-    tail_swap_pairs
+    word_pairs
   end
 
   #--- fiber: read_segments
@@ -36,11 +36,11 @@ class FiberDictionarySearch
       all_words = File.readlines(filename).map { |ln| ln.chomp }
 
       ('a'..'z').each do |letter|
-        puts "let: #{letter}"
+        puts "letter: #{letter}"
 
         letter_words = all_words.select { |word| word.start_with? letter }
 
-        Fiber.yield(letter_words)
+        Fiber.yield letter_words
       end
     end
   end
@@ -57,21 +57,21 @@ class FiberDictionarySearch
     end
   end
 
-  #-- fiber: list_tail_swap_pairs
-  def create_tail_swap_pairs_fiber
+  #-- fiber: list_word_pairs
+  def create_word_pairs_fiber
     Fiber.new do |word_list|
       while true
-        tail_swap_pairs = []
+        word_pairs = []
 
         word_list.each do |word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
           if (word < rev_word)  && (not rev_word.eql? word)
-            tail_swap_pairs << [word, rev_word] if (word_list.include? rev_word)
+            word_pairs << [word, rev_word] if (word_list.include? rev_word)
           end
         end
 
-        next_word_list  = Fiber.yield(tail_swap_pairs)
+        next_word_list  = Fiber.yield(word_pairs)
         word_list       = next_word_list
       end
     end
