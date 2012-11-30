@@ -5,7 +5,7 @@ class FiberDictionarySearch
   attr_accessor :word_pairs
 
   def initialize(filename)
-    puts "=== crane ==========="
+    puts "=== hummingbird ==========="
 
     @word_pairs = compute_word_pairs(filename)
   end
@@ -17,32 +17,30 @@ class FiberDictionarySearch
     delete_short_words_fiber   = create_delete_short_words_fiber
     tail_swap_pairs_fiber      = create_tail_swap_pairs_fiber
     
-    tail_swap_pairs_list = []
+    tail_swap_pairs = []
 
     while read_seg_fiber.alive?
-      dict_seg            = read_seg_fiber.resume
-      dict_seg            = delete_short_words_fiber.resume dict_seg
+      word_list            = read_seg_fiber.resume
+      word_list            = delete_short_words_fiber.resume(word_list)
 
-      #tail_swap_pairs     = tail_swap_pairs_fiber.resume dict_seg
-
-      #tail_swap_pairs.each { |sw_pair| tail_swap_pairs_list << sw_pair }
-      tail_swap_pairs_fiber.resume(dict_seg).each { |sw_pair| tail_swap_pairs_list << sw_pair }
+      swap_pairs = tail_swap_pairs_fiber.resume(word_list)
+      swap_pairs.each { |pair| tail_swap_pairs << pair }
     end
 
-    tail_swap_pairs_list
+    tail_swap_pairs
   end
 
   #--- fiber: read_segments
   def create_read_segments_fiber(filename)
     Fiber.new do
-      dict = File.readlines(filename).map { |ln| ln.chomp }
+      all_words = File.readlines(filename).map { |ln| ln.chomp }
 
-      ('a'..'z').each do |let|
-        puts "let: #{let}"
+      ('a'..'z').each do |letter|
+        puts "let: #{letter}"
 
-        let_seg = dict.select { |word| word.start_with? let }
+        letter_words = all_words.select { |word| word.start_with? letter }
 
-        Fiber.yield let_seg
+        Fiber.yield(letter_words)
       end
     end
   end
@@ -51,9 +49,9 @@ class FiberDictionarySearch
   def create_delete_short_words_fiber
     Fiber.new do |word_list|
       while true
-        long_word_list  = word_list.reject { |w| w.size < 3 }
+        long_words  = word_list.reject { |w| w.size < 3 }
 
-        next_word_list  = Fiber.yield long_word_list
+        next_word_list  = Fiber.yield(long_words)
         word_list       = next_word_list
       end
     end
@@ -68,12 +66,18 @@ class FiberDictionarySearch
         word_list.inject(tail_swap_pairs) do |list, word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
-          list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
+          #list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
+          #
+          #list
+
+          if (word < rev_word)  && (not rev_word.eql? word)
+             list << [word, rev_word] if (word_list.include? rev_word)
+          end
 
           list
         end
 
-        next_word_list  = Fiber.yield tail_swap_pairs
+        next_word_list  = Fiber.yield(tail_swap_pairs)
         word_list       = next_word_list
       end
     end
