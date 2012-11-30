@@ -1,38 +1,40 @@
-
 require 'pry'
 require 'fiber'
 
 class FiberDictionarySearch
-  attr_accessor :fiber_list, :tail_swap_pairs_list
+  attr_accessor :fiber_list, :word_pairs
 
   def initialize(filename)
-    @tail_swap_pairs_list  = []
+    puts "=== tr8 ==========="
 
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
         :delete_short_words   => create_delete_short_words_fiber,
         :tail_swap_pairs      => create_tail_swap_pairs_fiber
     }
+
+    @word_pairs = compute_word_pairs
   end
 
+  #---------------------------------------------------------------------------------------
+  private
+  def compute_word_pairs
+    tail_swap_pairs_list = []
 
-  def word_pairs
-    if @tail_swap_pairs_list.empty?
-      read_seg_fiber              = fiber_list[:read_seg]
-      delete_short_words_fiber    = fiber_list[:delete_short_words]
-      tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
+    read_seg_fiber              = fiber_list[:read_seg]
+    delete_short_words_fiber    = fiber_list[:delete_short_words]
+    tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
 
-      while read_seg_fiber.alive?
-        dict_seg      = read_seg_fiber.resume
-        dict_seg      = delete_short_words_fiber.resume dict_seg
+    while read_seg_fiber.alive?
+      dict_seg            = read_seg_fiber.resume
+      dict_seg            = delete_short_words_fiber.resume dict_seg
 
-        tail_swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
+      tail_swap_pairs     = tail_swap_pairs_fiber.resume dict_seg
 
-        tail_swap_pairs.each { |sw_pair| @tail_swap_pairs_list << sw_pair }
-      end
+      tail_swap_pairs.each { |sw_pair| tail_swap_pairs_list << sw_pair }
     end
 
-    @tail_swap_pairs_list
+    tail_swap_pairs_list
   end
 
   #--- fiber: read_segments
