@@ -5,8 +5,6 @@ class FiberDictionarySearch
   attr_accessor :word_pairs
 
   def initialize(filename)
-    puts "=== smart duck ==========="
-
     @word_pairs = compute_word_pairs(filename)
   end
 
@@ -59,6 +57,7 @@ class FiberDictionarySearch
 
   #-- fiber: list_word_pairs
   def create_word_pairs_fiber
+    #puts "--- doe ---"
     Fiber.new do |word_list|
       while true
         word_pairs = []
@@ -66,9 +65,11 @@ class FiberDictionarySearch
         word_list.each do |word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
-          if (word < rev_word)  && (not rev_word.eql? word)
-            word_pairs << [word, rev_word] if (word_list.include? rev_word)
-          end
+          next unless word < rev_word
+
+          next unless word_list.include? rev_word
+
+          word_pairs << [word, rev_word] unless rev_word.eql?(word)
         end
 
         next_word_list  = Fiber.yield(word_pairs)
