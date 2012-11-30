@@ -3,10 +3,10 @@ require 'pry'
 require 'fiber'
 
 class FiberDictionarySearch
-  attr_accessor :fiber_list, :reversible_suffix_words
+  attr_accessor :fiber_list, :swap_pairs_list
 
   def initialize(filename)
-    @reversible_suffix_words  = []
+    @swap_pairs_list  = []
 
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
@@ -15,34 +15,15 @@ class FiberDictionarySearch
     }
   end
 
-  def old_run
-    read_seg_fiber              = fiber_list[:read_seg]
-    delete_short_words_fiber    = fiber_list[:delete_short_words]
-    tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
-
-    swap_pairs_list = []
-
-    while read_seg_fiber.alive?
-      dict_seg      = read_seg_fiber.resume
-      dict_seg      = delete_short_words_fiber.resume dict_seg
-
-      swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
-
-      swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
-    end
-
-    #binding.pry
-    swap_pairs_list
-  end
 
   def word_pairs
-    if @reversible_suffix_words.empty?
-      #@reversible_suffix_words = self.run
+    if @swap_pairs_list.empty?
+      #@swap_pairs_list = self.run
       read_seg_fiber              = fiber_list[:read_seg]
       delete_short_words_fiber    = fiber_list[:delete_short_words]
       tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
 
-      swap_pairs_list = []
+      #swap_pairs_list = []
 
       while read_seg_fiber.alive?
         dict_seg      = read_seg_fiber.resume
@@ -50,14 +31,14 @@ class FiberDictionarySearch
 
         swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
 
-        swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
+        swap_pairs.each { |sw_pair| @swap_pairs_list << sw_pair }
       end
 
       #binding.pry
-      @reversible_suffix_words = swap_pairs_list
+      #@swap_pairs_list = swap_pairs_list
     end
 
-    @reversible_suffix_words
+    @swap_pairs_list
   end
 
   #--- fiber: read_segments
