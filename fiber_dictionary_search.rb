@@ -3,12 +3,9 @@ require 'pry'
 require 'fiber'
 
 class FiberDictionarySearch
-  attr_accessor :dict, :fiber_list, :reversible_suffix_words
+  attr_accessor :fiber_list
 
   def initialize(filename)
-    @dict = File.readlines(filename).map { |ln| ln.chomp }
-    @alphabet_list    = ('a'..'z').to_a
-
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
         :delete_short_words   => create_delete_short_words_fiber,
@@ -22,11 +19,13 @@ class FiberDictionarySearch
     tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
 
     swap_pairs_list = []
+
     while read_seg_fiber.alive?
       dict_seg      = read_seg_fiber.resume
       dict_seg      = delete_short_words_fiber.resume dict_seg
 
-      swap_pairs    = create_tail_swap_pairs_fiber.resume dict_seg
+      swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
+
       swap_pairs.each { |sw_pair| swap_pairs_list << sw_pair }
     end
 
@@ -42,7 +41,7 @@ class FiberDictionarySearch
 
     Fiber.new do
       let_list.each do |let|
-        puts "fiber: create_read_segments_fiber --- let: #{let} --- in let_list loop"
+        puts "create_read_segments_fiber: #{let}"
 
         let_seg = dict.select { |word| word.start_with? let }
 
@@ -67,7 +66,9 @@ class FiberDictionarySearch
   def create_tail_swap_pairs_fiber
     Fiber.new do |word_list|
       while true
-        swap_pairs = word_list.inject([]) do |list, word|
+        swap_pairs = []
+
+        word_list.inject(swap_pairs) do |list, word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
           list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
