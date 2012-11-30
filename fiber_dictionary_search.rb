@@ -8,7 +8,7 @@ class FiberDictionarySearch
     @word_pairs = compute_word_pairs(filename)
   end
 
-  #---------------------------------------------------------------------------------------
+  #--- private ---
   private
   def compute_word_pairs(filename)
     read_seg_fiber             = create_read_segments_fiber(filename)
@@ -57,7 +57,6 @@ class FiberDictionarySearch
 
   #-- fiber: list_word_pairs
   def create_word_pairs_fiber
-    #puts "--- doe ---"
     Fiber.new do |word_list|
       while true
         word_pairs = []
@@ -65,11 +64,11 @@ class FiberDictionarySearch
         word_list.each do |word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
-          next unless word < rev_word
+          next if rev_word < word
 
-          next unless word_list.include? rev_word
+          next if rev_word.eql? word
 
-          word_pairs << [word, rev_word] unless rev_word.eql?(word)
+          word_pairs << [word, rev_word] if word_list.include? rev_word
         end
 
         next_word_list  = Fiber.yield(word_pairs)
