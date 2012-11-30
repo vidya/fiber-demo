@@ -3,10 +3,10 @@ require 'pry'
 require 'fiber'
 
 class FiberDictionarySearch
-  attr_accessor :fiber_list, :swap_pairs_list
+  attr_accessor :fiber_list, :tail_swap_pairs_list
 
   def initialize(filename)
-    @swap_pairs_list  = []
+    @tail_swap_pairs_list  = []
 
     @fiber_list = {
         :read_seg             => create_read_segments_fiber(filename),
@@ -17,28 +17,22 @@ class FiberDictionarySearch
 
 
   def word_pairs
-    if @swap_pairs_list.empty?
-      #@swap_pairs_list = self.run
+    if @tail_swap_pairs_list.empty?
       read_seg_fiber              = fiber_list[:read_seg]
       delete_short_words_fiber    = fiber_list[:delete_short_words]
       tail_swap_pairs_fiber       = fiber_list[:tail_swap_pairs]
-
-      #swap_pairs_list = []
 
       while read_seg_fiber.alive?
         dict_seg      = read_seg_fiber.resume
         dict_seg      = delete_short_words_fiber.resume dict_seg
 
-        swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
+        tail_swap_pairs    = tail_swap_pairs_fiber.resume dict_seg
 
-        swap_pairs.each { |sw_pair| @swap_pairs_list << sw_pair }
+        tail_swap_pairs.each { |sw_pair| @tail_swap_pairs_list << sw_pair }
       end
-
-      #binding.pry
-      #@swap_pairs_list = swap_pairs_list
     end
 
-    @swap_pairs_list
+    @tail_swap_pairs_list
   end
 
   #--- fiber: read_segments
@@ -73,9 +67,9 @@ class FiberDictionarySearch
   def create_tail_swap_pairs_fiber
     Fiber.new do |word_list|
       while true
-        swap_pairs = []
+        tail_swap_pairs = []
 
-        word_list.inject(swap_pairs) do |list, word|
+        word_list.inject(tail_swap_pairs) do |list, word|
           rev_word = word[0..-3] + word[-2, 2].reverse
 
           list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
@@ -83,7 +77,7 @@ class FiberDictionarySearch
           list
         end
 
-        next_word_list  = Fiber.yield swap_pairs
+        next_word_list  = Fiber.yield tail_swap_pairs
         word_list       = next_word_list
       end
     end
