@@ -5,7 +5,7 @@ class FiberDictionarySearch
   attr_accessor :word_pairs
 
   def initialize(filename)
-    puts "=== hummingbird ==========="
+    puts "=== kingfisher ==========="
 
     @word_pairs = compute_word_pairs(filename)
   end
@@ -65,10 +65,6 @@ class FiberDictionarySearch
 
         word_list.inject(tail_swap_pairs) do |list, word|
           rev_word = word[0..-3] + word[-2, 2].reverse
-
-          #list << [word, rev_word] if (word < rev_word) && (word_list.include? rev_word) && (not rev_word.eql? word)
-          #
-          #list
 
           if (word < rev_word)  && (not rev_word.eql? word)
              list << [word, rev_word] if (word_list.include? rev_word)
